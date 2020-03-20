@@ -4,9 +4,10 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
-
+from torch.utils.tensorboard import SummaryWriter
 import torchvision
 import torchvision.transforms as transforms
+import numpy as np
 
 import os
 import argparse
@@ -14,7 +15,7 @@ import argparse
 from models import *
 from utils import progress_bar
 
-
+writer = SummaryWriter()
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
@@ -49,7 +50,7 @@ classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship'
 # Model
 print('==> Building model..')
 # net = VGG('VGG19')
-# net = ResNet18()
+net = ResNet18()
 # net = PreActResNet18()
 # net = GoogLeNet()
 # net = DenseNet121()
@@ -60,7 +61,7 @@ print('==> Building model..')
 # net = ShuffleNetG2()
 # net = SENet18()
 # net = ShuffleNetV2(1)
-net = EfficientNetB0()
+#net = EfficientNetB0()
 net = net.to(device)
 if device == 'cuda':
     net = torch.nn.DataParallel(net)
@@ -100,6 +101,9 @@ def train(epoch):
 
         progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
             % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+        writer.add_scalar("Training Loss", train_loss, epoch)
+        writer.add_scalar("Training Accuracy", correct, epoch)
+        
 
 def test(epoch):
     global best_acc
@@ -120,6 +124,7 @@ def test(epoch):
 
             progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
                 % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
+            writer.add_scalar("Test Loss", test_loss, batch_idx)
 
     # Save checkpoint.
     acc = 100.*correct/total
